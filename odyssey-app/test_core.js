@@ -71,6 +71,14 @@ for (const [name, from, to, maxKm] of trips) {
     if (!uniq.some(u => u.route.segments.map(s=>s.id).join() === r.route.segments.map(s=>s.id).join())) uniq.push(r);
   for (const r of uniq.slice(0, 2))
     console.log(`  [${r.label}] "${core.explain(r.route, uniq, crimes, havens, r.label)}"`);
+  const tbt = core.turnByTurn(graph, uniq[0].route);
+  console.log(`  tbt: ${tbt.length} steps; first: "${tbt[0].text}"`);
+  if (tbt.length < 3) { console.log("  !! suspiciously few steps"); fail++; }
+  if (!/^Head (north|north-east|east|south-east|south|south-west|west|north-west) on .+ — \d/.test(tbt[0].text)) { console.log("  !! first step malformed"); fail++; }
+  if (tbt[tbt.length - 1].text !== "Arrive at your destination") { console.log("  !! missing arrival step"); fail++; }
+  const covered = tbt.reduce((s, x) => s + x.dist, 0);
+  if (Math.abs(covered - uniq[0].route.chainLen) > 1) { console.log(`  !! tbt distance ${covered.toFixed(0)} != route ${uniq[0].route.chainLen.toFixed(0)}`); fail++; }
+  if (new Set(tbt.map(x => x.text)).size < 3) { console.log("  !! no street variety"); fail++; }
   const url = core.routeToGmapsUrl(graph, uniq[0].route);
   const wps = (url.match(/waypoints=([^&]*)/)?.[1] || "").split("%7C").filter(Boolean);
   console.log(`  gmaps: hops=${uniq[0].route.steps.length} waypoints=${wps.length}`, url.slice(0, 80) + "…");
