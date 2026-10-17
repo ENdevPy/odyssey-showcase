@@ -1,0 +1,63 @@
+{
+  "generated_at": "2026-10-17T20:47:19Z",
+  "sources": [
+    {
+      "name": "OpenStreetMap basemap (water/green/rail)",
+      "url": "https://overpass-api.de/api/interpreter",
+      "licence": "ODbL 1.0, (c) OSM contributors",
+      "fetched_at": "2026-10-17T20:47:19Z",
+      "features": 3620
+    },
+    {
+      "name": "OpenStreetMap walking network",
+      "url": "https://overpass-api.de/api/interpreter",
+      "licence": "ODbL 1.0, (c) OSM contributors",
+      "fetched_at": "2026-10-17T20:47:19Z",
+      "coverage": "23144 segments"
+    },
+    {
+      "name": "Police UK street-level crime",
+      "url": "https://data.police.uk/api/crimes-street/all-crime",
+      "licence": "Open Government Licence v3 (data.police.uk)",
+      "fetched_at": "2026-10-17T20:47:19Z",
+      "months": [
+        "2026-02",
+        "2026-03",
+        "2026-04",
+        "2026-05",
+        "2026-06",
+        "2026-07",
+        "2026-08"
+      ],
+      "crimes": 15258
+    },
+    {
+      "name": "EA flood monitoring (live gauge + warnings)",
+      "url": "https://environment.data.gov.uk/flood-monitoring/id/stations/E12660",
+      "licence": "OGL v3",
+      "fetched_at": "2026-10-17T20:47:19Z",
+      "gauge": {
+        "station": "Woolston (E12660)",
+        "measure": "tidal level mAOD",
+        "value": -0.984,
+        "reading_time": "2026-10-17T20:15:00Z"
+      }
+    },
+    {
+      "name": "OSM nightlife venues",
+      "url": "https://overpass-api.de/api/interpreter",
+      "licence": "ODbL 1.0",
+      "fetched_at": "2026-10-17T20:47:19Z",
+      "count": 181
+    }
+  ],
+  "coverage": {
+    "rendered_segments": 11336,
+    "lighting_known_pct": 55.4,
+    "surface_known_pct": 52.0,
+    "incline_known_pct": 1.6,
+    "sheltered_known_pct": 0.5,
+    "steps_segments": 132,
+    "covered_segments": 58
+  }
+}

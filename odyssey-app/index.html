@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Odyssey — Southampton</title>
+<meta name="theme-color" content="#070b15">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='14' fill='%23070b15'/%3E%3Cpath d='M22 6a12 12 0 1 0 4 16 10 10 0 0 1-4-16z' fill='%237dd3fc'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="vendor/leaflet.css">
+<link rel="stylesheet" href="style.css?v=4">
+</head>
+<body>
+<div id="app">
+  <aside id="panel">
+    <header>
+      <div class="head-row">
+        <h1><svg class="logo-mark" width="26" height="26" viewBox="0 0 32 32" aria-hidden="true"><path d="M22 6a12 12 0 1 0 4 16 10 10 0 0 1-4-16z" fill="url(#moon-grad)"/><defs><linearGradient id="moon-grad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#7dd3fc"/><stop offset="1" stop-color="#a78bfa"/></linearGradient></defs></svg>Odyssey</h1>
+        <button id="prefs-open" class="prefs-btn" title="Route preferences">Preferences</button>
+      </div>
+      <p class="tagline">Safest walking routes at night — Southampton · navigation by Athena</p>
+    </header>
+
+    <section id="trip-form">
+      <label for="dest">Where are you going?</label>
+      <input type="text" id="dest" placeholder="e.g. Ocean Village" autocomplete="off">
+      <button id="plan">Find my safest route</button>
+      <p class="hint">Starts from your GPS location. No signal? Click two points on the map instead (start, then destination).</p>
+      <p class="status" id="status"></p>
+    </section>
+
+    <section id="routes" class="hidden"></section>
+
+    <section id="live-section">
+      <p class="live" id="live"></p>
+    </section>
+
+    <section id="about">
+      <p class="coverage" id="coverage"></p>
+      <div id="sources"></div>
+      <p class="sources">
+        Data: © OpenStreetMap contributors (ODbL — basemap, network, lighting) ·
+        crime: real Police UK street-level records (OGL v3) · destination search: Nominatim (OSM).
+        Basemap is our own GeoJSON — no third-party tile server, no API key.
+      </p>
+    </section>
+  </aside>
+
+  <div id="map"></div>
+
+  <div id="sos-overlay" class="hidden">
+    <div class="sos-card">
+      <h2>Emergency</h2>
+      <a class="sos-btn emergency" href="tel:999">Call 999</a>
+      <a class="sos-btn" href="tel:101">Call 101 (non-emergency)</a>
+      <button class="sos-btn" id="sos-copy">Copy my location</button>
+      <p id="sos-location" class="hint"></p>
+      <p class="hint">Official guidance: <a href="https://www.gov.uk/contact-999" target="_blank">when to call 999</a> ·
+        <a href="https://www.suzylamplugh.org/pages/categories?category=safety-advice" target="_blank">Suzy Lamplugh Trust personal safety</a> ·
+        <a href="https://www.southampton.gov.uk/council-democracy/community-safety/community-safety-team/" target="_blank">Southampton community safety</a></p>
+      <button id="sos-close">Close</button>
+    </div>
+  </div>
+
+  <dialog id="prefs-dialog">
+    <form id="prefs-form" method="dialog">
+      <h2>Route preferences</h2>
+      <p class="pref-sub">These change which route Athena picks — they never change the crime risk shown.</p>
+
+      <label class="pref-row"><input type="checkbox" id="pref-lit" checked> Well-lit roads
+        <span class="pref-foot" id="cov-lit"></span></label>
+      <label class="pref-row"><input type="checkbox" id="pref-stairs"> Avoid stairs
+        <span class="pref-foot" id="cov-stairs"></span></label>
+      <label class="pref-row"><input type="checkbox" id="pref-steep"> Avoid steep gradients
+        <span class="pref-foot" id="cov-incline"></span>
+        <span class="pref-low hidden" data-lowcov="incline_known_pct">Unknown segments are not penalised.</span></label>
+      <label class="pref-row"><input type="checkbox" id="pref-sheltered"> Sheltered routes
+        <span class="pref-foot" id="cov-shelter"></span>
+        <span class="pref-low hidden" data-lowcov="sheltered_known_pct">Unknown segments are not penalised.</span></label>
+
+      <div class="pref-row pref-terrain">
+        <span class="pref-label">Terrain</span>
+        <label><input type="radio" name="terrain" value="paved"> Paved</label>
+        <label><input type="radio" name="terrain" value="mixed" checked> Mixed</label>
+        <label><input type="radio" name="terrain" value="any"> Any</label>
+        <span class="pref-foot" id="cov-surface"></span>
+        <span class="pref-low hidden" data-lowcov="surface_known_pct">Unknown segments are not penalised.</span>
+      </div>
+
+      <div class="pref-actions">
+        <button type="button" id="prefs-cancel" class="secondary">Cancel</button>
+        <button type="submit" id="prefs-save">Save preferences</button>
+      </div>
+    </form>
+  </dialog>
+
+  <button id="sos-open" title="Emergency SOS">SOS</button>
+  <div id="legend">
+    <span><i class="sw low"></i>low</span>
+    <span><i class="sw med"></i>medium</span>
+    <span><i class="sw high"></i>high</span>
+    <span><i class="sw unknown"></i>risk unknown</span>
+  </div>
+</div>
+<script src="vendor/leaflet.js"></script>
+<script src="app.js?v=4"></script>
+</body>
+</html>

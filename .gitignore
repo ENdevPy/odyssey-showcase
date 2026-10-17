@@ -1,0 +1,8 @@
+# regenerable pipeline caches (included in the archive for offline use,
+# ignored by git — rerun build_odyssey_data.py to recreate)
+odyssey-city-data/cache_*.json.gz
+odyssey-city-data/overpass_raw.json.gz
+
+node_modules/
+.DS_Store
+*.log

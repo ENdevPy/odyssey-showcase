@@ -1,0 +1,12 @@
+{
+  "fetched_at": "2026-10-17T20:47:19Z",
+  "licence": "Environment Agency flood-monitoring API, OGL v3",
+  "tide_gauge": {
+    "station": "Woolston (E12660)",
+    "measure": "tidal level mAOD",
+    "value": -0.984,
+    "reading_time": "2026-10-17T20:15:00Z"
+  },
+  "flood_warnings": [],
+  "flood_warnings_nationwide": 1
+}

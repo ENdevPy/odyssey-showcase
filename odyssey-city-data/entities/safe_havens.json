@@ -1,0 +1,156 @@
+[
+  {
+    "id": "SH-01",
+    "name": "University of Southampton Security Lodge (Highfield gate)",
+    "lat": 50.9362,
+    "lng": -1.3957,
+    "hours": "24/7",
+    "type": "Security",
+    "phone": "+44 23 8059 3311",
+    "segment_id": "SEG-1174345838",
+    "source": "curated (hours hand-checked Oct 2026)"
+  },
+  {
+    "id": "SH-02",
+    "name": "Sainsbury's Portswood",
+    "lat": 50.9285,
+    "lng": -1.3995,
+    "hours": "07:00-23:00 (24h Fri/Sat)",
+    "type": "Retail",
+    "segment_id": "SEG-328364111",
+    "source": "curated (hours hand-checked Oct 2026)"
+  },
+  {
+    "id": "SH-03",
+    "name": "Southampton Students' Union (The Bridge)",
+    "lat": 50.9345,
+    "lng": -1.3962,
+    "hours": "08:00-02:00",
+    "type": "Students' Union",
+    "segment_id": "SEG-231551357",
+    "source": "curated (hours hand-checked Oct 2026)"
+  },
+  {
+    "id": "SH-04",
+    "name": "Glen Eyre Halls reception",
+    "lat": 50.934,
+    "lng": -1.4026,
+    "hours": "24/7",
+    "type": "Halls reception",
+    "segment_id": "SEG-33883073",
+    "source": "curated (hours hand-checked Oct 2026)"
+  },
+  {
+    "id": "SH-05",
+    "name": "Premier Inn Southampton City Centre",
+    "lat": 50.903,
+    "lng": -1.4045,
+    "hours": "24/7",
+    "type": "Hotel",
+    "segment_id": "SEG-1150195565",
+    "source": "curated (hours hand-checked Oct 2026)"
+  },
+  {
+    "id": "SH-06",
+    "name": "Southampton Central police front desk",
+    "lat": 50.9085,
+    "lng": -1.4115,
+    "hours": "08:00-20:00",
+    "type": "Police",
+    "phone": "101",
+    "segment_id": "SEG-1331965757",
+    "source": "curated (hours hand-checked Oct 2026)"
+  },
+  {
+    "id": "SH-07",
+    "name": "Grand Harbour Hotel (Town Quay)",
+    "lat": 50.8995,
+    "lng": -1.402,
+    "hours": "24/7",
+    "type": "Hotel",
+    "segment_id": "SEG-1147230781",
+    "source": "curated (hours hand-checked Oct 2026)"
+  },
+  {
+    "id": "SH-08",
+    "name": "Harbour Lights Picturehouse, Ocean Village",
+    "lat": 50.9045,
+    "lng": -1.394,
+    "hours": "10:00-00:30",
+    "type": "Cinema",
+    "segment_id": "SEG-185305699",
+    "source": "curated (hours hand-checked Oct 2026)"
+  },
+  {
+    "id": "SH-09",
+    "name": "Asda Southampton (Ocean Village)",
+    "lat": 50.906,
+    "lng": -1.3935,
+    "hours": "24/7",
+    "type": "Retail",
+    "segment_id": "SEG-190394407",
+    "source": "curated (hours hand-checked Oct 2026)"
+  },
+  {
+    "id": "SH-10",
+    "name": "Southampton General Hospital main reception",
+    "lat": 50.9174,
+    "lng": -1.4327,
+    "hours": "24/7",
+    "type": "Hospital",
+    "phone": "111",
+    "segment_id": "SEG-4077042",
+    "source": "curated (hours hand-checked Oct 2026)"
+  },
+  {
+    "id": "SH-11",
+    "name": "Royal South Hants Hospital reception",
+    "lat": 50.9074,
+    "lng": -1.4051,
+    "hours": "24/7",
+    "type": "Hospital",
+    "phone": "111",
+    "segment_id": "SEG-4797573",
+    "source": "curated (hours hand-checked Oct 2026)"
+  },
+  {
+    "id": "SH-12",
+    "name": "Tesco Express Bevois Valley",
+    "lat": 50.9207,
+    "lng": -1.404,
+    "hours": "06:00-23:00",
+    "type": "Retail",
+    "segment_id": "SEG-1134016762",
+    "source": "curated (hours hand-checked Oct 2026)"
+  },
+  {
+    "id": "SH-13",
+    "name": "BP petrol station, Burgess Road",
+    "lat": 50.9308,
+    "lng": -1.3956,
+    "hours": "24/7",
+    "type": "Petrol station",
+    "segment_id": "SEG-173804804",
+    "source": "curated (hours hand-checked Oct 2026)"
+  },
+  {
+    "id": "SH-14",
+    "name": "Bitterne Leisure Centre",
+    "lat": 50.9215,
+    "lng": -1.3635,
+    "hours": "06:30-22:00",
+    "type": "Leisure centre",
+    "segment_id": "SEG-757437813",
+    "source": "curated (hours hand-checked Oct 2026)"
+  },
+  {
+    "id": "SH-15",
+    "name": "Woodmill Inn",
+    "lat": 50.9257,
+    "lng": -1.38,
+    "hours": "11:00-23:00",
+    "type": "Pub",
+    "segment_id": "SEG-1123468873",
+    "source": "curated (hours hand-checked Oct 2026)"
+  }
+]
