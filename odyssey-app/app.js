@@ -316,7 +316,11 @@ function fmtDist(m) { return m < 1000 ? `${Math.round(m)} m` : `${(m / 1000).toF
 function turnByTurn(graph, route) {
   const groups = [];
   for (const st of route.steps) {
-    const name = graph.byId.get(st.seg)?.name || "unnamed path";
+    const segMeta = graph.byId.get(st.seg);
+    const WAY_NICE = { pedestrian: "pedestrian street", footway: "footpath",
+      cycleway: "cycle path", service: "service road", living_street: "living street" };
+    const name = (segMeta?.name && segMeta.name !== "unnamed path") ? segMeta.name :
+      (segMeta?.highway_type ? (WAY_NICE[segMeta.highway_type] || segMeta.highway_type.replace(/_/g, " ")) : "unnamed path");
     const g = groups[groups.length - 1];
     if (g && g.name === name) { g.dist += st.len; g.to = graph.nodes.get(st.to).c; }
     else groups.push({ name, dist: st.len, from: graph.nodes.get(st.from).c, to: graph.nodes.get(st.to).c });
