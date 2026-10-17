@@ -314,6 +314,7 @@ function bearingDeg(a, b) {
 }
 function fmtDist(m) { return m < 1000 ? `${Math.round(m)} m` : `${(m / 1000).toFixed(1)} km`; }
 function turnByTurn(graph, route) {
+  if (!route.steps.length) return [{ text: "Start and destination are the same place", dist: 0 }];
   const groups = [];
   for (const st of route.steps) {
     const segMeta = graph.byId.get(st.seg);
@@ -378,6 +379,7 @@ function dpSimplify(pts, tol) {
    8 evenly spaced interior waypoints so Google follows the walked
    path instead of inventing its own. */
 function routeToGmapsUrl(graph, route) {
+  if (!route.steps.length) return "https://www.google.com/maps";
   const pts = [graph.nodes.get(route.steps[0].from).c]
     .concat(route.steps.map(st => graph.nodes.get(st.to).c));
   // merged LineString: drop consecutive duplicates
@@ -659,6 +661,10 @@ if (typeof document !== "undefined") (async function () {
     const a = snap(graph, fromLL), b = snap(graph, toLL);
     if (a.dist > 400 || b.dist > 400) {
       routesEl.innerHTML = "<p class='hint'>Start or destination is too far from the walking network — pick a point nearer a street or path.</p>";
+      return;
+    }
+    if (a.key === b.key) {
+      routesEl.innerHTML = "<p class='hint'>Start and destination are the same point — pick two different points on the map.</p>";
       return;
     }
     const prefs = loadPrefs();
