@@ -417,6 +417,15 @@ if (typeof module !== "undefined") {
 
 /* ============================ browser UI =============================== */
 if (typeof document !== "undefined") (async function () {
+  /* surface unexpected errors in the status line instead of failing silently */
+  const showErr = (label, err) => {
+    const el = document.getElementById("status");
+    if (el) el.textContent = `${label}: ${err && (err.message || err)}`;
+    console.error(label, err);
+  };
+  window.addEventListener("error", (e) => showErr("Error", e.error || e.message));
+  window.addEventListener("unhandledrejection", (e) => showErr("Async error", e.reason));
+
   const $ = (id) => document.getElementById(id);
   const load = (p) => fetch(p).then(r => r.json());
   const [segments, crimes, havens, model, liveSnapshot, manifest, basemap] = await Promise.all([
