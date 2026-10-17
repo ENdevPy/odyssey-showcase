@@ -302,28 +302,77 @@ function explain(route, altRoutes, crimes, havens, label) {
   return parts.slice(0, 3).join(" ");
 }
 
-/* Google Maps handoff: origin and destination only, travelmode=walking.
-   Google draws one continuous route with no intermediate stops; Athena's
-   chosen path stays visible in-app. */
+/* Douglas-Peucker polyline simplification (tolerance in degrees). */
+function dpSimplify(pts, tol) {
+  if (pts.length < 3) return pts.slice();
+  const keep = new Array(pts.length).fill(false);
+  keep[0] = keep[pts.length - 1] = true;
+  const stack = [[0, pts.length - 1]];
+  while (stack.length) {
+    const [i, j] = stack.pop();
+    let maxD = -1, idx = -1;
+    const [x1, y1] = pts[i], [x2, y2] = pts[j];
+    const dx = x2 - x1, dy = y2 - y1;
+    const len2 = dx * dx + dy * dy;
+    for (let k = i + 1; k < j; k++) {
+      const [x, y] = pts[k];
+      let d;
+      if (len2 === 0) d = Math.hypot(x - x1, y - y1);
+      else {
+        const t = Math.max(0, Math.min(1, ((x - x1) * dx + (y - y1) * dy) / len2));
+        d = Math.hypot(x - (x1 + t * dx), y - (y1 + t * dy));
+      }
+      if (d > maxD) { maxD = d; idx = k; }
+    }
+    if (maxD > tol && idx > 0) {
+      keep[idx] = true;
+      stack.push([i, idx], [idx, j]);
+    }
+  }
+  return pts.filter((_, i) => keep[i]);
+}
+
+/* Google Maps URL from a Dijkstra node route: merge hops into one
+   LineString, simplify (Douglas-Peucker, 0.0003 deg), then sample
+   8 evenly spaced interior waypoints so Google follows the walked
+   path instead of inventing its own. */
 function routeToGmapsUrl(graph, route) {
-  const first = graph.nodes.get(route.steps[0].from).c;
-  const last = graph.nodes.get(route.steps[route.steps.length - 1].to).c;
+  const pts = [graph.nodes.get(route.steps[0].from).c]
+    .concat(route.steps.map(st => graph.nodes.get(st.to).c));
+  // merged LineString: drop consecutive duplicates
+  const line = pts.filter((p, i) => i === 0 ||
+    p[0] !== pts[i - 1][0] || p[1] !== pts[i - 1][1]);
+  const simple = dpSimplify(line, 0.0003);
+  // cumulative length, then 8 interior samples at equal spacing
+  const cum = [0];
+  for (let i = 1; i < simple.length; i++)
+    cum.push(cum[i - 1] + distM(simple[i - 1], simple[i]));
+  const total = cum[cum.length - 1];
+  const wps = [];
+  for (let k = 1; k <= 8; k++) {
+    const target = total * k / 9;
+    let i = 1;
+    while (i < cum.length - 1 && cum[i] < target) i++;
+    wps.push(simple[i]);
+  }
+  console.debug(`[athena] gmaps: ${route.steps.length} Dijkstra hops ` +
+    `-> ${line.length} merged nodes -> ${wps.length} waypoints`);
   const ll = c => `${c[0].toFixed(5)},${c[1].toFixed(5)}`;
   const q = new URLSearchParams({
-    api: 1, origin: ll(first), destination: ll(last),
-    travelmode: "walking",
+    api: "1", origin: ll(simple[0]), destination: ll(simple[simple.length - 1]),
+    waypoints: wps.map(ll).join("|"), travelmode: "walking",
   });
-  console.debug(`[athena] gmaps: single continuous route, ` +
-    `${route.steps.length} hops kept in-app, no intermediate stops`);
   return "https://www.google.com/maps/dir/?" + q.toString();
 }
 
-if (typeof module !== "undefined")
-  module.exports = {
-    buildGraph, snap, planTriad, findRoute, routeStats, explain,
-    routeToGmapsUrl, distM, PRESETS, PROFILES, MAX_EXTRA_MIN,
-    edgeMultiplier, explanationFactors, DEFAULT_PREFS, loadPrefs, etaTime,
-  };
+/* ----------------------------- exports -------------------------------- */
+if (typeof module !== "undefined") {
+  module.exports = { buildGraph, snap, findRoute, routeStats, explain,
+                     routeToGmapsUrl, distM, PRESETS, PROFILES, MAX_EXTRA_MIN,
+                     dpSimplify, edgeMultiplier, explanationFactors,
+                     DEFAULT_PREFS, loadPrefs,
+                     planTriad };
+}
 
 /* ============================ browser UI =============================== */
 if (typeof document !== "undefined") (async function () {

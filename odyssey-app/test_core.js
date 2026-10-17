@@ -72,11 +72,10 @@ for (const [name, from, to, maxKm] of trips) {
   for (const r of uniq.slice(0, 2))
     console.log(`  [${r.label}] "${core.explain(r.route, uniq, crimes, havens, r.label)}"`);
   const url = core.routeToGmapsUrl(graph, uniq[0].route);
-  console.log(`  gmaps: hops=${uniq[0].route.steps.length} stops=0`, url.slice(0, 90) + "…");
-  if (url.includes("waypoints=")) { console.log("  !! waypoints present — Google would show stops"); fail++; }
+  const wps = (url.match(/waypoints=([^&]*)/)?.[1] || "").split("%7C").filter(Boolean);
+  console.log(`  gmaps: hops=${uniq[0].route.steps.length} waypoints=${wps.length}`, url.slice(0, 80) + "…");
+  if (wps.length !== 8) { console.log("  !! expected 8 evenly-spaced waypoints"); fail++; }
   if (!url.includes("travelmode=walking")) { console.log("  !! missing travelmode=walking"); fail++; }
-  const stops = (url.match(/%7C/g) || []).length;
-  if (stops) { console.log(`  !! ${stops} pipe-separated stops in URL`); fail++; }
 }
 // ---- preferences: parity with preferences.py fixtures + route flip ----
 console.log("\n== preferences ==");
