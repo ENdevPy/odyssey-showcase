@@ -12,7 +12,7 @@ http://localhost:8000. No backend, no accounts, no keys.
   bound — and says so when a corridor offers no real safety gain.
 - **Live:** the panel fetches the real-time Environment Agency tide gauge at
   Woolston and active flood warnings directly in your browser.
-- **Turn-by-turn:** shown in-app on Athena's exact path (OSM street names) — no rerouting, no stop markers. Google Maps stays a backup handoff (pinned via up to 8 waypoints, walking; Google shows them as stops — verified unavoidable).
+- **Turn-by-turn:** shown in-app on Athena's exact path (OSM street names) — no rerouting, no stop markers. The Google Maps handoff pins the route with a single `via:` passthrough street — Google's own dragged-route mechanism, so no stop markers there either. Verified live (Oct 2026, google.com/maps/dir): exactly one via survives Google's URL parsing (any second waypoint turns both into stops; `via:` with coordinates or plus codes is rejected; the legacy `daddr +to:via:` chain is no longer parsed), so the one pin goes on the street where Athena's path most departs from the obvious walk. A separate "Pin exact route" link offers the 8-waypoint version: follows Athena turn-for-turn, at the cost of stop markers.
 - **SOS:** 999 / 101 dial buttons, copy-my-location, official guidance links.
 - **Honesty:** `node test_core.js` verifies routes on the real data;
   `data/data_manifest.json` lists every source with its licence and fetch

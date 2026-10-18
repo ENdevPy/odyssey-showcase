@@ -117,7 +117,7 @@ fake-precise percentages, because "87% safe" would be a lie.
 - Preset destinations or click-anywhere trip planning
 - Safest / Shortest / Balanced comparison cards
 - Plain-English explanations per route
-- In-app turn-by-turn on Athena's exact route (no rerouting, no stop markers), plus a Google Maps backup handoff pinned via waypoints
+- In-app turn-by-turn on Athena's exact route, plus a Google Maps handoff pinned by a single `via:` passthrough street (no stop markers); a "Pin exact route" fallback link uses 8 waypoints and follows Athena turn-for-turn, with stop markers
 - "Report this route" (saved on the device; with no backend it stays local,
   and the app says so)
 - SOS overlay: call 999, call 101, copy my location

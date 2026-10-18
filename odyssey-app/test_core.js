@@ -80,10 +80,23 @@ for (const [name, from, to, maxKm] of trips) {
   if (Math.abs(covered - uniq[0].route.chainLen) > 1) { console.log(`  !! tbt distance ${covered.toFixed(0)} != route ${uniq[0].route.chainLen.toFixed(0)}`); fail++; }
   if (new Set(tbt.map(x => x.text)).size < 3) { console.log("  !! no street variety"); fail++; }
   const url = core.routeToGmapsUrl(graph, uniq[0].route);
-  const wps = (url.match(/waypoints=([^&]*)/)?.[1] || "").split("%7C").filter(Boolean);
-  console.log(`  gmaps: hops=${uniq[0].route.steps.length} waypoints=${wps.length}`, url.slice(0, 80) + "…");
-  if (wps.length !== 8) { console.log("  !! expected 8 evenly-spaced waypoints"); fail++; }
+  const via = core.viaStreet(graph, uniq[0].route);
+  console.log(`  gmaps via: ${via ? via.name : "NONE"} deviation=${via ? (via.devDeg*111).toFixed(1) : 0} km`);
+  console.log("  gmaps:", decodeURIComponent(url).slice(0, 130) + "…");
+  // default link: exactly one NAMED via passthrough, no coordinate stops
   if (!url.includes("travelmode=walking")) { console.log("  !! missing travelmode=walking"); fail++; }
+  if (url.includes("%7C")) { console.log("  !! via link must not use multiple waypoints"); fail++; }
+  const dec = decodeURIComponent(url).replace(/\+/g, " ");
+  if (via) {
+    if (!dec.includes(`via:${via.name}, Southampton`)) { console.log("  !! via street missing from URL"); fail++; }
+    if (!dec.includes("via:")) { console.log("  !! via: prefix lost"); fail++; }
+  } else if (url.includes("waypoints=")) { console.log("  !! no named street, must fall back to plain link"); fail++; }
+  // exact link: 8 evenly-spaced coordinate waypoints (stop-marker fallback)
+  const xurl = core.routeToGmapsUrlExact(graph, uniq[0].route);
+  const xwps = (xurl.match(/waypoints=([^&]*)/)?.[1] || "").split("%7C").filter(Boolean);
+  console.log(`  gmaps exact: waypoints=${xwps.length}`);
+  if (xwps.length !== 8) { console.log("  !! exact link expected 8 waypoints"); fail++; }
+  if (xurl.includes("via%3A") || xurl.includes("via:")) { console.log("  !! exact link must not carry via:"); fail++; }
 }
 // ---- preferences: parity with preferences.py fixtures + route flip ----
 console.log("\n== preferences ==");

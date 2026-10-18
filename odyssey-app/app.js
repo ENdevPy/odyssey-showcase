@@ -379,15 +379,75 @@ function dpSimplify(pts, tol) {
    LineString, simplify (Douglas-Peucker, 0.0003 deg), then sample
    8 evenly spaced interior waypoints so Google follows the walked
    path instead of inventing its own. */
+/* ---- Google Maps handoff ----------------------------------------------
+ * Two flavours, one decision each route:
+ *   routeToGmapsUrl      - ONE "via:" passthrough street (default link).
+ *   routeToGmapsUrlExact  - 8 coordinate waypoints, pins every turn.
+ *
+ * Verified live (Oct 2026, google.com/maps/dir): a single
+ * waypoints=via:<Street>, Southampton is accepted as a PASSTHROUGH point -
+ * Google renders "via <street>" like a hand-dragged route, with NO stop
+ * markers and no stop legs. A second waypoint in the same URL strips the
+ * via: prefix and turns BOTH into stops; via: with raw coordinates or
+ * plus codes is rejected ("can't find"); the legacy saddr/daddr +to:via:
+ * chain is no longer parsed. So the URL vocabulary is: exactly one named
+ * via, or N coordinate stops. We spend the one pin on the street where
+ * Athena's path most departs from the obvious walk - the max-deviation
+ * vertex from the origin->destination chord - and offer the 8-waypoint
+ * link as the "exact" fallback. */
+
+function isNamed(n) {
+  return n && n !== "unnamed path" && !n.startsWith("unnamed") && n.length > 1;
+}
+
+/* The one street worth pinning: interior vertex with the largest
+ * perpendicular deviation from the straight origin->destination chord,
+ * restricted to named streets so Google can geocode the via. */
+function viaStreet(graph, route) {
+  if (route.steps.length < 2) return null;
+  const A = graph.nodes.get(route.steps[0].from).c;
+  const B = graph.nodes.get(route.steps[route.steps.length - 1].to).c;
+  const dx = B[0] - A[0], dy = B[1] - A[1], L2 = dx * dx + dy * dy;
+  let best = null, bestD = -1;
+  for (let i = 0; i + 1 < route.steps.length; i++) {
+    const p = graph.nodes.get(route.steps[i].to).c;
+    const t = L2 ? ((p[0] - A[0]) * dx + (p[1] - A[1]) * dy) / L2 : 0;
+    if (t < 0.1 || t > 0.9) continue;                 // interior only
+    const name = graph.byId.get(route.steps[i + 1].seg).name;
+    if (!isNamed(name)) continue;                     // must be geocodable
+    const px = A[0] + t * dx, py = A[1] + t * dy;
+    const d = Math.hypot(p[0] - px, p[1] - py);
+    if (d > bestD) { bestD = d; best = { name, coord: p, devDeg: d }; }
+  }
+  if (!best) console.debug("[athena] gmaps: no named interior street; plain origin->dest link");
+  return best;
+}
+
+/* Default handoff: clean, no stop markers, corridor pinned by one via. */
 function routeToGmapsUrl(graph, route) {
+  if (!route.steps.length) return "https://www.google.com/maps";
+  const A = graph.nodes.get(route.steps[0].from).c;
+  const B = graph.nodes.get(route.steps[route.steps.length - 1].to).c;
+  const ll = c => `${c[0].toFixed(5)},${c[1].toFixed(5)}`;
+  const q = { api: "1", origin: ll(A), destination: ll(B), travelmode: "walking" };
+  const via = viaStreet(graph, route);
+  if (via) {
+    q.waypoints = `via:${via.name}, Southampton`;
+    console.debug(`[athena] gmaps via: ${via.name} ` +
+      `(deviation ${(via.devDeg * 111).toFixed(0)} km from direct line)`);
+  }
+  return "https://www.google.com/maps/dir/?" + new URLSearchParams(q).toString();
+}
+
+/* Fallback handoff: every turn pinned with coordinate waypoints.
+ * Follows Athena exactly, at the cost of stop markers on the map. */
+function routeToGmapsUrlExact(graph, route) {
   if (!route.steps.length) return "https://www.google.com/maps";
   const pts = [graph.nodes.get(route.steps[0].from).c]
     .concat(route.steps.map(st => graph.nodes.get(st.to).c));
-  // merged LineString: drop consecutive duplicates
   const line = pts.filter((p, i) => i === 0 ||
     p[0] !== pts[i - 1][0] || p[1] !== pts[i - 1][1]);
   const simple = dpSimplify(line, 0.0003);
-  // cumulative length, then 8 interior samples at equal spacing
   const cum = [0];
   for (let i = 1; i < simple.length; i++)
     cum.push(cum[i - 1] + distM(simple[i - 1], simple[i]));
@@ -399,8 +459,6 @@ function routeToGmapsUrl(graph, route) {
     while (i < cum.length - 1 && cum[i] < target) i++;
     wps.push(simple[i]);
   }
-  console.debug(`[athena] gmaps: ${route.steps.length} Dijkstra hops ` +
-    `-> ${line.length} merged nodes -> ${wps.length} waypoints`);
   const ll = c => `${c[0].toFixed(5)},${c[1].toFixed(5)}`;
   const q = new URLSearchParams({
     api: "1", origin: ll(simple[0]), destination: ll(simple[simple.length - 1]),
@@ -412,7 +470,8 @@ function routeToGmapsUrl(graph, route) {
 /* ----------------------------- exports -------------------------------- */
 if (typeof module !== "undefined") {
   module.exports = { buildGraph, snap, findRoute, routeStats, explain,
-                     routeToGmapsUrl, turnByTurn, distM, PRESETS, PROFILES, MAX_EXTRA_MIN,
+                     routeToGmapsUrl, routeToGmapsUrlExact, viaStreet, turnByTurn,
+                     distM, PRESETS, PROFILES, MAX_EXTRA_MIN,
                      dpSimplify, edgeMultiplier, explanationFactors,
                      DEFAULT_PREFS, loadPrefs,
                      planTriad };
@@ -697,6 +756,7 @@ if (typeof document !== "undefined") (async function () {
     uniq.forEach((r, idx) => {
       const st = routeStats(r.route);
       r.route.gmaps_url = routeToGmapsUrl(graph, r.route);
+      r.route.gmaps_url_exact = routeToGmapsUrlExact(graph, r.route);
       r.route.explanation_factors = explanationFactors(r.route.segments, prefs);
       const text = [r.note, explain(r.route, uniq, crimes, havens, r.label)]
         .filter(Boolean).join(" ");
@@ -719,6 +779,7 @@ if (typeof document !== "undefined") (async function () {
         `<div class="route-actions">` +
         `<button class="choose" data-i="${idx}">Choose this route</button>` +
         `<a class="gmaps" target="_blank" href="${r.route.gmaps_url}">Open in Google Maps</a>` +
+        `<a class="gmaps-exact" target="_blank" title="Same link pinned with 8 coordinate waypoints: Google follows Athena's exact path but shows stop markers" href="${r.route.gmaps_url_exact}">Pin exact route</a>` +
         `<button class="report" data-i="${idx}">Report this route</button></div>` +
         `<p class="report-msg hidden" id="msg-${idx}">Thanks — saved. Athena retrains on monthly Police UK data; your report is kept for the next retrain.</p>`;
       routesEl.appendChild(card);

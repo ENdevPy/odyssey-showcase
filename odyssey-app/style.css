@@ -141,6 +141,10 @@ button:active { transform: translateY(0); }
   transition: filter 0.15s ease, transform 0.15s ease;
 }
 .route-actions a:hover, .route-actions button:hover { filter: brightness(1.08); transform: translateY(-1px); }
+.route-actions .gmaps-exact {
+  background: transparent; color: var(--muted); font-size: 12px;
+  border: 1px solid var(--border); font-family: var(--font-head); font-weight: 600;
+}
 .route-actions .gmaps {
   background: rgba(29, 111, 209, 0.12); color: var(--accent-deep);
   border: 1px solid rgba(29, 111, 209, 0.35);
