@@ -621,7 +621,7 @@ if (typeof document !== "undefined") (async function () {
      the University / Portswood). Useful for screenshots, pitch decks and
      trying Odyssey without granting GPS. */
   if (new URLSearchParams(location.search).get("demo") === "1") {
-    planRoute([50.9362, -1.39561], [50.92841, -1.39961], "Demo destination");
+    setTimeout(() => planRoute([50.9362, -1.39561], [50.92841, -1.39961], "Demo destination"), 0);
   }
 
   let routeLayers = [];
