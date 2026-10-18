@@ -487,6 +487,13 @@ if (typeof document !== "undefined") (async function () {
   });
   new LocateControl({ position: "topleft" }).addTo(map);
 
+  /* demo mode: ?demo=1 auto-plans a real route (two verified points near
+     the University / Portswood). Useful for screenshots, pitch decks and
+     trying Odyssey without granting GPS. */
+  if (new URLSearchParams(location.search).get("demo") === "1") {
+    planRoute([50.9362, -1.39561], [50.92841, -1.39961], "Demo destination");
+  }
+
   const COLORS = { low: "#34d399", medium: "#fbbf24", high: "#fb7185", unknown: "#5f6b7d" };
   const segLayer = L.layerGroup().addTo(map);
 
