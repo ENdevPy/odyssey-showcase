@@ -60,10 +60,10 @@ routing, no explanations. The model is trained by the pipeline on real data:
   highway type, isolation, tide exposure, nightlife density, distance to
   24/7 venues, and lagged crime counts
 - **Honest split:** trained on months up to 2026-07, evaluated on the
-  held-out month **2026-08**: **AUC 0.971** vs **0.866** for a baseline that
+  held-out month **2026-08**: **AUC 0.982** vs **0.866** for a baseline that
   predicts from last month's crime alone — the comparison the brief asks for
 - **Output:** each segment's predicted probability of a reported street crime
-  next month; bands are documented quantiles (top 10% high, 75th–90th medium)
+  next month. Bands are **evidence-gated**: high needs BOTH a top-5% model score AND ≥2 street crimes in the last 90 days; medium needs the 75th percentile AND ≥1 recent crime, so an old incident cluster with clean recent months can never be rated high. Incident recency decays exponentially (half-life 1.5 months) via the log1p_decay feature.
 - **In the router:** Athena's Dijkstra consumes the continuous probability
   (not just the band) as extra cost per metre, with a 12-minute detour bound
 
@@ -119,7 +119,7 @@ card, and a live demo.
    know — every grey line is unscorable, by design."
 2. **Shirley → city centre.** Shortest passes **265 reported street crimes**
    (real Police UK data); Athena's Safest route passes **13** for +7 min.
-   Read the model card line in the panel: AUC 0.971 vs 0.866 baseline.
+   Read the model card line in the panel: AUC 0.982 vs 0.866 baseline.
 3. **Click a red segment** near the centre: real crime categories with the
    Police UK credit and month. Click a grey one: "risk unknown."
 4. **Live data moment:** the panel shows the real-time Woolston tide gauge

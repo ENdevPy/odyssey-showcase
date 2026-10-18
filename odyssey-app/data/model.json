@@ -15,24 +15,26 @@
     "nightlife_250m",
     "log_dist_centre",
     "log1p_lag1",
-    "log1p_lag2"
+    "log1p_lag2",
+    "log1p_decay"
   ],
   "coefficients": {
-    "log_len": 0.5073,
-    "is_footway": -0.1793,
-    "is_path": -0.0552,
-    "is_steps": -0.0447,
-    "is_service": -0.0372,
-    "is_residential": 0.3605,
-    "is_main": -0.1219,
-    "is_pedestrian": -0.0857,
-    "is_cycleway": -0.1492,
-    "nightlife_250m": 0.0992,
-    "log_dist_centre": -0.1695,
-    "log1p_lag1": 0.7619,
-    "log1p_lag2": 0.7123
+    "log_len": 0.4511,
+    "is_footway": -0.1622,
+    "is_path": -0.0521,
+    "is_steps": -0.0419,
+    "is_service": -0.0357,
+    "is_residential": 0.3213,
+    "is_main": -0.1157,
+    "is_pedestrian": -0.0718,
+    "is_cycleway": -0.1367,
+    "nightlife_250m": 0.0814,
+    "log_dist_centre": -0.1442,
+    "log1p_lag1": 0.2734,
+    "log1p_lag2": 0.3365,
+    "log1p_decay": 0.9033
   },
-  "intercept": -3.6821,
+  "intercept": -3.7606,
   "feature_means": {
     "log_len": 3.78,
     "is_footway": 0.151,
@@ -46,7 +48,8 @@
     "nightlife_250m": 0.129,
     "log_dist_centre": 0.773,
     "log1p_lag1": 0.079,
-    "log1p_lag2": 0.078
+    "log1p_lag2": 0.078,
+    "log1p_decay": 0.104
   },
   "feature_stds": {
     "log_len": 1.263,
@@ -61,7 +64,8 @@
     "nightlife_250m": 0.221,
     "log_dist_centre": 0.081,
     "log1p_lag1": 0.333,
-    "log1p_lag2": 0.33
+    "log1p_lag2": 0.33,
+    "log1p_decay": 0.381
   },
   "training": {
     "train_months": [
@@ -74,24 +78,30 @@
     "segments_scored": 7502
   },
   "evaluation": {
-    "auc_model": 0.971,
+    "auc_model": 0.982,
     "auc_baseline_recent_crime": 0.866,
     "baseline_description": "predicts risk from last month's crime count alone",
     "base_rate_any_crime_next_month": 0.068
   },
   "bands": {
-    "high": "top 10% of scored segments by predicted risk (percentile band, cut at 0.0685)",
-    "medium": "75th-90th percentile of scored segments (cut at 0.0357)",
-    "low": "below the 75th percentile",
+    "high": "predicted risk in the top 5% of scored segments (cut at 0.6375) AND >= 2 street crimes recorded in the last 90 days",
+    "medium": "predicted risk at/above the 75th percentile (cut at 0.0301) AND >= 1 street crime in the last 90 days",
+    "low": "everything else -- including streets whose only incidents are months old",
     "unknown": "lighting unknown -> never scored (honesty rule)",
-    "note": "bands are percentile-based on the fit's scored predictions, not absolute probability thresholds"
+    "note": "both model risk AND real recent Police UK records are required for high/medium: a street with an old incident cluster and clean recent months cannot be rated high, no matter how the percentile falls"
+  },
+  "recency_handling": {
+    "decay_feature": "log1p_decay",
+    "formula": "sum over prior months of count * 0.5^(k/1.5); half-life 1.5 months, so a 3-month-old incident weighs a quarter of a fresh one",
+    "combined_with": "log1p_lag1/log1p_lag2 (last two months) -- fresh activity always dominates",
+    "window_note": "decay is computed over the fetched Police UK window (2026-02..2026-08); incidents older than the window are invisible (they drop out, not decay gradually)"
   },
   "removed_features": [
     {
       "feature": "lit_no",
       "reason": "moved to router as preference multiplier",
       "detail": "lighting encodes the user's well-lit-roads preference, not crime causation; kept in the model it confounds preference with prediction",
-      "coefficient_in_comparison_fit": -0.0234
+      "coefficient_in_comparison_fit": -0.0249
     },
     {
       "feature": "lit_partial",
@@ -109,29 +119,30 @@
       "feature": "isolation",
       "reason": "moved to router as preference multiplier",
       "detail": "quiet-vs-busy streets are a route preference the user can weigh, not a crime predictor we should bake in",
-      "coefficient_in_comparison_fit": -0.1066
+      "coefficient_in_comparison_fit": -0.093
     },
     {
       "feature": "tide_exposed",
       "reason": "structurally dead",
       "detail": "riverside exposure is rare in the crime window and the fitted weight is negligible; live tide data is shown in the app instead",
-      "coefficient_in_comparison_fit": 0.0489
+      "coefficient_in_comparison_fit": 0.0518
     },
     {
       "feature": "haven_300m",
       "reason": "excluded before scoring",
       "detail": "safe-haven density tracks the city centre and duplicates log_dist_centre (confounded); havens are surfaced on the map, not in the crime score",
-      "coefficient_in_comparison_fit": 0.029
+      "coefficient_in_comparison_fit": 0.0201
     }
   ],
-  "design_choice": "Preference-related attributes (lighting, isolation, tide exposure, haven proximity, terrain) are separated from crime prediction so a user's preferences cannot bias the risk estimate: the model predicts reported street crime only, and the router applies each user's preferences as explicit edge-cost multipliers. Risk bands are percentile-based (75th/90th percentile of the fit's scored predictions) rather than absolute thresholds, so bands stay comparable when the base rate moves.",
+  "design_choice": "Preference-related attributes (lighting, isolation, tide exposure, haven proximity, terrain) are separated from crime prediction so a user's preferences cannot bias the risk estimate: the model predicts reported street crime only, and the router applies each user's preferences as explicit edge-cost multipliers. Bands are percentile-calibrated (75th/95th percentile of the fit's scored predictions) AND gated on real recent incidents, so a high badge always reflects both the model and current Police UK records. Incident recency decays exponentially (half-life 1.5 months) inside log1p_decay.",
   "known_limitations": [
     "Time-of-day gap: Police UK street-level data has no time field, so the model predicts reported street crime generally, not night-time crime specifically; the night framing is carried by the router's preferences (lighting, quiet streets), not by data.",
     "Crime-location blurring: Police UK snaps crimes to an anonymous nearby street point; we snap to the nearest walking segment within 120 m, so segment-level counts are approximate by construction.",
-    "Lag-feature dominance: recent-crime history (log1p_lag1 coefficient 0.7619) is the strongest signal; where a street has no recent records the model falls back on structure (type, length, centre distance) and is correspondingly less certain.",
-    "Unknown-lighting exclusion: 45% of walking segments have no lighting data in OSM and are never scored; they show as grey 'risk unknown' in the app rather than being silently guessed."
+    "Lag-feature dominance: recent-crime history (log1p_lag1 coefficient 0.2734) is the strongest signal; where a street has no recent records the model falls back on structure (type, length, centre distance) and is correspondingly less certain.",
+    "Unknown-lighting exclusion: 45% of walking segments have no lighting data in OSM and are never scored; they show as grey 'risk unknown' in the app rather than being silently guessed.",
+    "Decay window: the recency decay spans the Police UK fetch window (2026-02..2026-08); incidents older than the window are invisible to the model (they drop out, not decay gradually)."
   ],
-  "trained_at": "2026-10-17T20:47:19Z",
+  "trained_at": "2026-10-18T00:09:17Z",
   "data_sources": [
     "Police UK street-level crime API (OGL v3), months 2026-02, 2026-03, 2026-04, 2026-05, 2026-06, 2026-07, 2026-08",
     "OpenStreetMap lit tags + highway types (ODbL)"

@@ -16,7 +16,7 @@ http://localhost:8000. No backend, no accounts, no keys.
 - **SOS:** 999 / 101 dial buttons, copy-my-location, official guidance links.
 - **Honesty:** `node test_core.js` verifies routes on the real data;
   `data/data_manifest.json` lists every source with its licence and fetch
-  date; `data/model.json` is the full model card (AUC 0.971 vs 0.866
+  date; `data/model.json` is the full model card (AUC 0.982 vs 0.866
   recency baseline on held-out Aug 2026).
 
 Regenerate all data + retrain the model: see `../odyssey-city-data`.

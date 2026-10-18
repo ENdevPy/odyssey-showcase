@@ -4,6 +4,7 @@
  * No build step, no backend, no keys. Core is exported for Node testing.
  */
 "use strict";
+const CACHE_V = "9";
 
 /* ----------------------------- constants ------------------------------ */
 const BAND_RANK = { low: 0, medium: 1, high: 2 };
@@ -429,7 +430,7 @@ if (typeof document !== "undefined") (async function () {
   window.addEventListener("unhandledrejection", (e) => showErr("Async error", e.reason));
 
   const $ = (id) => document.getElementById(id);
-  const load = (p) => fetch(p).then(r => r.json());
+  const load = (p) => fetch(`${p}?v=${CACHE_V}`).then(r => r.json());
   const [segments, crimes, havens, model, liveSnapshot, manifest, basemap] = await Promise.all([
     load("data/path_segments.json"), load("data/incidents.json"),
     load("data/safe_havens.json"), load("data/model.json").catch(() => null),

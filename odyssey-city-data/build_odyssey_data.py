@@ -497,9 +497,12 @@ REMOVED_FEATURES = ["lit_no", "lit_partial", "lit_unknown", "isolation",
 FEATURES_STATIC = ["log_len", "is_footway", "is_path", "is_steps", "is_service",
     "is_residential", "is_main", "is_pedestrian", "is_cycleway",
     "nightlife_250m", "log_dist_centre"]
-FEATURES_LAG = ["log1p_lag1", "log1p_lag2"]
+FEATURES_LAG = ["log1p_lag1", "log1p_lag2", "log1p_decay"]
+# log1p_decay = sum(count k months back * 0.5^(k/1.5)) -- incidents decay
+# with a 1.5-month half-life, so an old cluster ranks clearly below a
+# fresh one of the same size (see recency_handling in the model card).
 
-def seg_features(s, lag1=0, lag2=0):
+def seg_features(s, lag1=0, lag2=0, decay=0):
     hw = s["highway_type"]
     return {
         "log_len": math.log1p(s["length_m"]),
@@ -512,6 +515,7 @@ def seg_features(s, lag1=0, lag2=0):
         "log_dist_centre": math.log1p(s["dist_to_centre_m"]) / 10.0,
         "log1p_lag1": math.log1p(lag1),
         "log1p_lag2": math.log1p(lag2),
+        "log1p_decay": math.log1p(decay),
     }
 
 def logistic(z):
@@ -573,6 +577,13 @@ def train_model(segs, per_month, havens, months, offline):
     def count(s, m):
         return per_month.get(s["id"], {}).get(m, 0)
 
+    def decayed(s, mi):
+        """Exponentially decayed crime history. An incident k months back
+        weighs 0.5^(k/1.5): half-life 1.5 months. Three incidents months
+        ago rank clearly below the same three in the last month."""
+        return sum(count(s, months_sorted[mi - k]) * 0.5 ** (k / 1.5)
+                   for k in range(1, mi + 1))
+
     def old_extras(s):
         mid = s["coordinates"][len(s["coordinates"])//2]
         haven = any(dist_m((h["lat"], h["lng"]), mid) <= 300 for h in havens)
@@ -593,7 +604,7 @@ def train_model(segs, per_month, havens, months, offline):
             lag2 = count(s, months_sorted[mi-2]) if mi >= 2 else 0
             if mi < 2:                        # need 2 lags to be comparable
                 continue
-            f = seg_features(s, lag1, lag2)
+            f = seg_features(s, lag1, lag2, decayed(s, mi))
             rows.append(([f[k] for k in fidx], 1 if count(s, m) > 0 else 0))
     if not rows:
         return None, None
@@ -641,7 +652,7 @@ def train_model(segs, per_month, havens, months, offline):
                 continue
             lag1 = count(s, months_sorted[mi-1])
             lag2 = count(s, months_sorted[mi-2])
-            f = seg_features(s, lag1, lag2)
+            f = seg_features(s, lag1, lag2, decayed(s, mi))
             ex = old_extras(s)
             rows_w.append(([f[k] for k in fidx] + [ex[k] for k in REMOVED_FEATURES],
                            1 if count(s, m) > 0 else 0))
@@ -665,7 +676,7 @@ def train_model(segs, per_month, havens, months, offline):
         if mi < 2:
             continue
         lag1, lag2 = count(s, months_sorted[mi-1]), count(s, months_sorted[mi-2])
-        f = seg_features(s, lag1, lag2)
+        f = seg_features(s, lag1, lag2, decayed(s, mi))
         x = [(f[k] - mean[j]) / std[j] for j, k in enumerate(fidx)]
         z = b + sum(wj * xj for wj, xj in zip(w, x))
         y = 1 if count(s, test_m) > 0 else 0
@@ -679,13 +690,13 @@ def train_model(segs, per_month, havens, months, offline):
     for s in scored:
         lag1 = count(s, months_sorted[-1])
         lag2 = count(s, months_sorted[-2])
-        f = seg_features(s, lag1, lag2)
+        f = seg_features(s, lag1, lag2, decayed(s, len(months_sorted)))
         x = [(f[k] - mean[j]) / std[j] for j, k in enumerate(fidx)]
         preds[s["id"]] = round(logistic(b + sum(wj * xj for wj, xj in zip(w, x))), 4)
 
     # bands: quantiles of predicted next-month risk, documented in the card
     vals = sorted(preds.values())
-    hi_cut = vals[int(0.90 * (len(vals)-1))]
+    hi_cut = vals[int(0.95 * (len(vals)-1))]
     med_cut = vals[int(0.75 * (len(vals)-1))]
 
     coef = {k: round(v, 4) for k, v in zip(fidx, w)}
@@ -717,14 +728,31 @@ def train_model(segs, per_month, havens, months, offline):
             "base_rate_any_crime_next_month": round(base_rate, 4),
         },
         "bands": {
-            "high": f"top 10% of scored segments by predicted risk "
-                    f"(percentile band, cut at {hi_cut})",
-            "medium": f"75th-90th percentile of scored segments "
-                      f"(cut at {med_cut})",
-            "low": "below the 75th percentile",
+            "high": f"predicted risk in the top 5% of scored segments "
+                    f"(cut at {hi_cut}) AND >= 2 street crimes recorded "
+                    "in the last 90 days",
+            "medium": f"predicted risk at/above the 75th percentile "
+                      f"(cut at {med_cut}) AND >= 1 street crime in the "
+                      "last 90 days",
+            "low": "everything else -- including streets whose only "
+                   "incidents are months old",
             "unknown": "lighting unknown -> never scored (honesty rule)",
-            "note": "bands are percentile-based on the fit's scored "
-                    "predictions, not absolute probability thresholds",
+            "note": "both model risk AND real recent Police UK records are "
+                    "required for high/medium: a street with an old "
+                    "incident cluster and clean recent months cannot be "
+                    "rated high, no matter how the percentile falls",
+        },
+        "recency_handling": {
+            "decay_feature": "log1p_decay",
+            "formula": "sum over prior months of count * 0.5^(k/1.5); "
+                       "half-life 1.5 months, so a 3-month-old incident "
+                       "weighs a quarter of a fresh one",
+            "combined_with": "log1p_lag1/log1p_lag2 (last two months) -- "
+                             "fresh activity always dominates",
+            "window_note": f"decay is computed over the fetched Police UK "
+                           f"window ({months_sorted[0]}..{months_sorted[-1]}); "
+                           "incidents older than the window are invisible "
+                           "(they drop out, not decay gradually)",
         },
         "removed_features": [
             {"feature": "lit_no",
@@ -766,9 +794,11 @@ def train_model(segs, per_month, havens, months, offline):
             "prediction so a user's preferences cannot bias the risk estimate: "
             "the model predicts reported street crime only, and the router "
             "applies each user's preferences as explicit edge-cost "
-            "multipliers. Risk bands are percentile-based (75th/90th "
-            "percentile of the fit's scored predictions) rather than absolute "
-            "thresholds, so bands stay comparable when the base rate moves.",
+            "multipliers. Bands are percentile-calibrated (75th/95th "
+            "percentile of the fit's scored predictions) AND gated on real "
+            "recent incidents, so a high badge always reflects both the "
+            "model and current Police UK records. Incident recency decays "
+            "exponentially (half-life 1.5 months) inside log1p_decay.",
         "known_limitations": [
             "Time-of-day gap: Police UK street-level data has no time field, "
             "so the model predicts reported street crime generally, not "
@@ -787,6 +817,10 @@ def train_model(segs, per_month, havens, months, offline):
             "walking segments have no lighting data in OSM and are never "
             "scored; they show as grey 'risk unknown' in the app rather "
             "than being silently guessed.",
+            f"Decay window: the recency decay spans the Police UK fetch "
+            f"window ({months_sorted[0]}..{months_sorted[-1]}); incidents "
+            "older than the window are invisible to the model (they drop "
+            "out, not decay gradually).",
         ],
         "trained_at": NOW_ISO,
         "data_sources": [
@@ -854,7 +888,7 @@ def main():
     vals_hi = vals_med = None
     if model and preds:
         vals = sorted(preds.values())
-        vals_hi = vals[int(0.90 * (len(vals)-1))]
+        vals_hi = vals[int(0.95 * (len(vals)-1))]
         vals_med = vals[int(0.75 * (len(vals)-1))]
     for s in segs:
         if s["lighting"] == "unknown":
@@ -862,8 +896,12 @@ def main():
         elif model and preds:
             p = preds.get(s["id"], 0)
             s["risk_score"] = p
-            s["risk_band"] = ("high" if p >= vals_hi else
-                              "medium" if p >= vals_med else "low")
+            # evidence gate: the model alone can never rate a street
+            # high/medium without real recent reported incidents
+            s["risk_band"] = (
+                "high" if (p >= vals_hi and s["crime_count_90d"] >= 2) else
+                "medium" if (p >= vals_med and s["crime_count_90d"] >= 1)
+                else "low")
         else:
             # untrained fallback: recent crime count only, clearly flagged
             s["risk_band"] = ("high" if s["crime_count_90d"] >= 3 else

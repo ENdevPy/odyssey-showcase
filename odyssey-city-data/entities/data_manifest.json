@@ -1,25 +1,25 @@
 {
-  "generated_at": "2026-10-17T20:47:19Z",
+  "generated_at": "2026-10-18T00:09:17Z",
   "sources": [
     {
       "name": "OpenStreetMap basemap (water/green/rail)",
       "url": "https://overpass-api.de/api/interpreter",
       "licence": "ODbL 1.0, (c) OSM contributors",
-      "fetched_at": "2026-10-17T20:47:19Z",
+      "fetched_at": "2026-10-18T00:09:17Z",
       "features": 3620
     },
     {
       "name": "OpenStreetMap walking network",
       "url": "https://overpass-api.de/api/interpreter",
       "licence": "ODbL 1.0, (c) OSM contributors",
-      "fetched_at": "2026-10-17T20:47:19Z",
+      "fetched_at": "2026-10-18T00:09:17Z",
       "coverage": "23144 segments"
     },
     {
       "name": "Police UK street-level crime",
       "url": "https://data.police.uk/api/crimes-street/all-crime",
       "licence": "Open Government Licence v3 (data.police.uk)",
-      "fetched_at": "2026-10-17T20:47:19Z",
+      "fetched_at": "2026-10-18T00:09:17Z",
       "months": [
         "2026-02",
         "2026-03",
@@ -35,19 +35,19 @@
       "name": "EA flood monitoring (live gauge + warnings)",
       "url": "https://environment.data.gov.uk/flood-monitoring/id/stations/E12660",
       "licence": "OGL v3",
-      "fetched_at": "2026-10-17T20:47:19Z",
+      "fetched_at": "2026-10-18T00:09:17Z",
       "gauge": {
         "station": "Woolston (E12660)",
         "measure": "tidal level mAOD",
-        "value": -0.984,
-        "reading_time": "2026-10-17T20:15:00Z"
+        "value": -0.284,
+        "reading_time": "2026-10-17T23:45:00Z"
       }
     },
     {
       "name": "OSM nightlife venues",
       "url": "https://overpass-api.de/api/interpreter",
       "licence": "ODbL 1.0",
-      "fetched_at": "2026-10-17T20:47:19Z",
+      "fetched_at": "2026-10-18T00:09:17Z",
       "count": 181
     }
   ],

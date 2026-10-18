@@ -167,7 +167,7 @@ Athena's risk model is **trained by the pipeline on the real crime data**:
 logistic regression over 19 features (lighting, highway type, isolation,
 tide exposure, nightlife density, distance to 24/7 venues, lagged crime
 counts). Trained on months up to Jul 2026, evaluated on the held-out month
-Aug 2026: **AUC 0.971**, against a baseline that predicts from last month's
+Aug 2026: **AUC 0.982**, against a baseline that predicts from last month's
 crime alone (**AUC 0.866**). Remove the model and the product has no scores,
 no safest routing, no explanations — that's AI at the core, with the baseline
 comparison the brief asks for.

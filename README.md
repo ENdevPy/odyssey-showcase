@@ -56,7 +56,7 @@ popup cites Police UK with the month of the data.
 Athena's risk model is a logistic regression (19 standardised features)
 trained by the pipeline on the real crime data, with a temporal split:
 trained on months to Jul 2026, evaluated on the held-out month Aug 2026.
-**AUC 0.971**, against **0.866** for a baseline that predicts risk from last
+**AUC 0.982**, against **0.866** for a baseline that predicts risk from last
 month's crime alone. The router consumes the model's continuous probability
 per segment with a 12-minute detour bound, and when an area offers no real
 safety gain it says so instead of pretending. Full model card, coefficients
