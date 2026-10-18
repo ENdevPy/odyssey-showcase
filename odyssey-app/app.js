@@ -4,7 +4,7 @@
  * No build step, no backend, no keys. Core is exported for Node testing.
  */
 "use strict";
-const CACHE_V = "9";
+const CACHE_V = "10";
 
 /* ----------------------------- constants ------------------------------ */
 const BAND_RANK = { low: 0, medium: 1, high: 2 };
